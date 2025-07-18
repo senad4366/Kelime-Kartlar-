@@ -1,155 +1,273 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-    <meta charset="UTF-8">
-    <title>Kelime Kartları</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            padding: 30px;
-            background-color: #f0f8ff;
-        }
-        #card {
-            font-size: 24px;
-            margin: 20px auto;
-            padding: 40px;
-            border: 2px solid #ccc;
-            border-radius: 12px;
-            width: 80%;
-            max-width: 400px;
-            background-color: #fff;
-            min-height: 50px;
-        }
-        button {
-            margin: 10px;
-            padding: 12px 24px;
-            font-size: 16px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-        }
-        .easy { background-color: #90ee90; }
-        .good { background-color: #ffeb3b; }
-        .hard { background-color: #f08080; }
-        .repeat { background-color: #87cefa; }
-        #stats {
-            margin-top: 20px;
-            font-size: 18px;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <title>Kelime Kartları ve Quiz</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 20px;
+      background-color: #f0f8ff;
+    }
+    #card {
+      font-size: 24px;
+      margin: 20px auto;
+      padding: 40px;
+      border: 2px solid #ccc;
+      border-radius: 12px;
+      width: 80%;
+      max-width: 400px;
+      background-color: #fff;
+      min-height: 50px;
+    }
+    button {
+      margin: 10px;
+      padding: 12px 24px;
+      font-size: 16px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .easy { background-color: #90ee90; }
+    .good { background-color: #ffeb3b; }
+    .hard { background-color: #f08080; }
+    .repeat { background-color: #87cefa; }
+    #stats, #quizResult {
+      margin-top: 20px;
+      font-size: 18px;
+    }
+    #quiz {
+      display: none;
+      margin-top: 40px;
+      padding: 20px;
+      border-top: 2px solid #888;
+    }
+    .option {
+      display: block;
+      margin: 10px auto;
+      padding: 10px;
+      background-color: #fff;
+      border: 2px solid #aaa;
+      border-radius: 8px;
+      cursor: pointer;
+      width: 80%;
+      max-width: 300px;
+    }
+    .selected {
+      background-color: #d3f8d3;
+      border-color: #4caf50;
+    }
+    #startQuizBtn {
+      background-color: #4caf50;
+      color: white;
+    }
+  </style>
 </head>
 <body>
-    <h1>Kelime Kartları</h1>
-    <div id="card">Hazır mısın?</div>
-    <button onclick="flipCard()">Kartı Çevir</button>
-    <button onclick="nextCard()">Sonraki</button>
-    <br><br>
-    <button class="easy" onclick="markCard('easy')">Kolay</button>
-    <button class="good" onclick="markCard('good')">Orta</button>
-    <button class="hard" onclick="markCard('hard')">Zor</button>
-    <br><br>
-    <button class="repeat" onclick="repeatHardWords()">Zorları Tekrarla</button>
+  <h1>Kelime Kartları</h1>
+  <div id="card">Hazır mısın?</div>
+  <button onclick="flipCard()">Kartı Çevir</button>
+  <button onclick="nextCard()">Sonraki</button>
+  <br><br>
+  <button class="easy" onclick="markCard('easy')">Kolay</button>
+  <button class="good" onclick="markCard('good')">Orta</button>
+  <button class="hard" onclick="markCard('hard')">Zor</button>
+  <br><br>
+  <button class="repeat" onclick="repeatHardWords()">Zorları Tekrarla</button>
 
-    <div id="stats">
-        <p>Kolay: <span id="easyCount">0</span></p>
-        <p>Orta: <span id="goodCount">0</span></p>
-        <p>Zor: <span id="hardCount">0</span></p>
-    </div>
+  <div id="stats">
+    <p>Kolay: <span id="easyCount">0</span></p>
+    <p>Orta: <span id="goodCount">0</span></p>
+    <p>Zor: <span id="hardCount">0</span></p>
+  </div>
 
-    <script>
-        const allCards = [
-            { en: "apple", tr: "elma" },
-            { en: "book", tr: "kitap" },
-            { en: "table", tr: "masa" },
-            { en: "water", tr: "su" },
-            { en: "car", tr: "araba" },
-            { en: "house", tr: "ev" },
-            { en: "school", tr: "okul" },
-            { en: "pen", tr: "kalem" },
-            { en: "sun", tr: "güneş" },
-            { en: "tree", tr: "ağaç" }
-        ];
+  <br><hr><br>
+  <button id="startQuizBtn" onclick="showQuiz()">📋 Quiz'e Başla</button>
 
-        let cards = shuffle([...allCards]);
-        let hardWords = JSON.parse(localStorage.getItem('hardWords')) || [];
-        let currentIndex = 0;
-        let showingEnglish = true;
+  <div id="quiz">
+    <h2>Quiz Başladı</h2>
+    <div id="quizQuestion"></div>
+    <div id="quizOptions"></div>
+    <button onclick="submitAnswer()">Cevapla</button>
+    <div id="quizResult"></div>
+    <p>Son Puan: <span id="lastScore">0</span></p>
+  </div>
 
-        let stats = JSON.parse(localStorage.getItem('stats')) || { easy: 0, good: 0, hard: 0 };
+  <script>
+    const allCards = [
+      { en: "apple", tr: "elma" }, { en: "book", tr: "kitap" },
+      { en: "table", tr: "masa" }, { en: "water", tr: "su" },
+      { en: "car", tr: "araba" }, { en: "house", tr: "ev" },
+      { en: "school", tr: "okul" }, { en: "pen", tr: "kalem" },
+      { en: "sun", tr: "güneş" }, { en: "tree", tr: "ağaç" },
+      { en: "door", tr: "kapı" }, { en: "window", tr: "pencere" },
+      { en: "chair", tr: "sandalye" }, { en: "milk", tr: "süt" },
+      { en: "bread", tr: "ekmek" }, { en: "phone", tr: "telefon" },
+      { en: "dog", tr: "köpek" }, { en: "cat", tr: "kedi" },
+      { en: "computer", tr: "bilgisayar" }, { en: "notebook", tr: "defter" }
+    ];
 
-        const card = document.getElementById("card");
-        const easyCount = document.getElementById("easyCount");
-        const goodCount = document.getElementById("goodCount");
-        const hardCount = document.getElementById("hardCount");
+    let cards = shuffle([...allCards]);
+    let hardWords = JSON.parse(localStorage.getItem('hardWords')) || [];
+    let currentIndex = 0;
+    let showingEnglish = true;
 
-        function shuffle(array) {
-            return array.sort(() => Math.random() - 0.5);
+    let stats = JSON.parse(localStorage.getItem('stats')) || { easy: 0, good: 0, hard: 0 };
+
+    const card = document.getElementById("card");
+    const easyCount = document.getElementById("easyCount");
+    const goodCount = document.getElementById("goodCount");
+    const hardCount = document.getElementById("hardCount");
+
+    function shuffle(array) {
+      return array.sort(() => Math.random() - 0.5);
+    }
+
+    function showCard() {
+      const currentCard = cards[currentIndex];
+      card.textContent = showingEnglish ? currentCard.en : currentCard.tr;
+      if (showingEnglish) speak(currentCard.en);
+    }
+
+    function speak(text) {
+      if ('speechSynthesis' in window) {
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'en-US';
+        window.speechSynthesis.speak(utterance);
+      }
+    }
+
+    function flipCard() {
+      showingEnglish = !showingEnglish;
+      showCard();
+    }
+
+    function nextCard() {
+      currentIndex = (currentIndex + 1) % cards.length;
+      showingEnglish = true;
+      showCard();
+    }
+
+    function markCard(level) {
+      stats[level]++;
+      if (level === "hard") {
+        const word = cards[currentIndex];
+        if (!hardWords.find(w => w.en === word.en)) {
+          hardWords.push(word);
+          localStorage.setItem('hardWords', JSON.stringify(hardWords));
         }
+      }
+      updateStats();
+      nextCard();
+    }
 
-        function showCard() {
-            const currentCard = cards[currentIndex];
-            card.textContent = showingEnglish ? currentCard.en : currentCard.tr;
-            if (showingEnglish) {
-                speak(currentCard.en);
-            }
-        }
+    function updateStats() {
+      easyCount.textContent = stats.easy;
+      goodCount.textContent = stats.good;
+      hardCount.textContent = stats.hard;
+      localStorage.setItem('stats', JSON.stringify(stats));
+    }
 
-        function speak(text) {
-            if ('speechSynthesis' in window) {
-                const utterance = new SpeechSynthesisUtterance(text);
-                utterance.lang = 'en-US';
-                window.speechSynthesis.speak(utterance);
-            }
-        }
+    function repeatHardWords() {
+      if (hardWords.length === 0) {
+        alert("Henüz zor olarak işaretlenmiş kelime yok.");
+        return;
+      }
+      cards = shuffle([...hardWords]);
+      currentIndex = 0;
+      showingEnglish = true;
+      showCard();
+    }
 
-        function flipCard() {
-            showingEnglish = !showingEnglish;
-            showCard();
-        }
+    // ==== QUIZ ====
+    let quizIndex = 0;
+    let quizQuestions = [];
+    let quizScore = 0;
+    let selectedOption = null;
+    const quizCount = 10; // kaç soru olsun
 
-        function nextCard() {
-            currentIndex = (currentIndex + 1) % cards.length;
-            showingEnglish = true;
-            showCard();
-        }
+    const quizQuestionDiv = document.getElementById("quizQuestion");
+    const quizOptionsDiv = document.getElementById("quizOptions");
+    const quizResultDiv = document.getElementById("quizResult");
+    const lastScoreSpan = document.getElementById("lastScore");
 
-        function markCard(level) {
-            stats[level]++;
-            if (level === "hard") {
-                const currentWord = cards[currentIndex];
-                const exists = hardWords.some(w => w.en === currentWord.en);
-                if (!exists) {
-                    hardWords.push(currentWord);
-                }
-                localStorage.setItem('hardWords', JSON.stringify(hardWords));
-            }
-            updateStats();
-            nextCard();
-        }
+    function showQuiz() {
+      document.getElementById("quiz").style.display = "block";
+      document.getElementById("startQuizBtn").style.display = "none";
+      startQuiz();
+    }
 
-        function updateStats() {
-            easyCount.textContent = stats.easy;
-            goodCount.textContent = stats.good;
-            hardCount.textContent = stats.hard;
-            localStorage.setItem('stats', JSON.stringify(stats));
-        }
+    function startQuiz() {
+      quizQuestions = shuffle([...allCards]).slice(0, quizCount);
+      quizIndex = 0;
+      quizScore = 0;
+      selectedOption = null;
+      showQuizQuestion();
+    }
 
-        function repeatHardWords() {
-            if (hardWords.length === 0) {
-                alert("Henüz zor olarak işaretlenmiş kelime yok.");
-                return;
-            }
-            cards = shuffle([...hardWords]);
-            currentIndex = 0;
-            showingEnglish = true;
-            showCard();
-        }
+    function showQuizQuestion() {
+      const question = quizQuestions[quizIndex];
+      quizQuestionDiv.textContent = `${quizIndex + 1}. İngilizcesi: "${question.en}"`;
 
-        window.onload = () => {
-            showCard();
-            updateStats();
+      const options = shuffle([
+        question.tr,
+        ...shuffle(allCards.filter(w => w.tr !== question.tr)).slice(0, 3).map(w => w.tr)
+      ]);
+
+      quizOptionsDiv.innerHTML = '';
+      options.forEach(option => {
+        const btn = document.createElement("button");
+        btn.textContent = option;
+        btn.className = "option";
+        btn.onclick = () => {
+          document.querySelectorAll(".option").forEach(b => b.classList.remove("selected"));
+          btn.classList.add("selected");
+          selectedOption = option;
         };
-    </script>
+        quizOptionsDiv.appendChild(btn);
+      });
+
+      quizResultDiv.textContent = "";
+    }
+
+    function submitAnswer() {
+      if (!selectedOption) {
+        alert("Lütfen bir seçenek seçin.");
+        return;
+      }
+
+      const correctAnswer = quizQuestions[quizIndex].tr;
+      if (selectedOption === correctAnswer) {
+        quizScore++;
+        quizResultDiv.textContent = "✅ Doğru!";
+      } else {
+        quizResultDiv.textContent = `❌ Yanlış! Doğru cevap: ${correctAnswer}`;
+      }
+
+      quizIndex++;
+      selectedOption = null;
+
+      if (quizIndex < quizQuestions.length) {
+        setTimeout(showQuizQuestion, 1000);
+      } else {
+        setTimeout(endQuiz, 1000);
+      }
+    }
+
+    function endQuiz() {
+      const score = Math.round((quizScore / quizCount) * 100);
+      quizResultDiv.textContent = `Quiz tamamlandı! Puan: ${score}`;
+      lastScoreSpan.textContent = score;
+      localStorage.setItem("lastScore", score);
+    }
+
+    window.onload = () => {
+      showCard();
+      updateStats();
+      const savedScore = localStorage.getItem("lastScore");
+      if (savedScore) lastScoreSpan.textContent = savedScore;
+    };
+  </script>
 </body>
 </html>
