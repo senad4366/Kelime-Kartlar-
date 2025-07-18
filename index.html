@@ -19,6 +19,7 @@
             width: 80%;
             max-width: 400px;
             background-color: #fff;
+            min-height: 50px;
         }
         button {
             margin: 10px;
@@ -31,6 +32,7 @@
         .easy { background-color: #90ee90; }
         .good { background-color: #ffeb3b; }
         .hard { background-color: #f08080; }
+        .repeat { background-color: #87cefa; }
         #stats {
             margin-top: 20px;
             font-size: 18px;
@@ -40,11 +42,14 @@
 <body>
     <h1>Kelime Kartları</h1>
     <div id="card">Hazır mısın?</div>
+    <button onclick="flipCard()">Kartı Çevir</button>
     <button onclick="nextCard()">Sonraki</button>
     <br><br>
     <button class="easy" onclick="markCard('easy')">Kolay</button>
     <button class="good" onclick="markCard('good')">Orta</button>
     <button class="hard" onclick="markCard('hard')">Zor</button>
+    <br><br>
+    <button class="repeat" onclick="repeatHardWords()">Zorları Tekrarla</button>
 
     <div id="stats">
         <p>Kolay: <span id="easyCount">0</span></p>
@@ -53,17 +58,24 @@
     </div>
 
     <script>
-        const cards = [
-            "elma – apple",
-            "kitap – book",
-            "masa – table",
-            "su – water",
-            "araba – car"
+        const allCards = [
+            { en: "apple", tr: "elma" },
+            { en: "book", tr: "kitap" },
+            { en: "table", tr: "masa" },
+            { en: "water", tr: "su" },
+            { en: "car", tr: "araba" },
+            { en: "house", tr: "ev" },
+            { en: "school", tr: "okul" },
+            { en: "pen", tr: "kalem" },
+            { en: "sun", tr: "güneş" },
+            { en: "tree", tr: "ağaç" }
         ];
 
+        let cards = shuffle([...allCards]);
+        let hardWords = JSON.parse(localStorage.getItem('hardWords')) || [];
         let currentIndex = 0;
+        let showingEnglish = true;
 
-        // localStorage'dan istatistikleri al
         let stats = JSON.parse(localStorage.getItem('stats')) || { easy: 0, good: 0, hard: 0 };
 
         const card = document.getElementById("card");
@@ -71,13 +83,47 @@
         const goodCount = document.getElementById("goodCount");
         const hardCount = document.getElementById("hardCount");
 
+        function shuffle(array) {
+            return array.sort(() => Math.random() - 0.5);
+        }
+
+        function showCard() {
+            const currentCard = cards[currentIndex];
+            card.textContent = showingEnglish ? currentCard.en : currentCard.tr;
+            if (showingEnglish) {
+                speak(currentCard.en);
+            }
+        }
+
+        function speak(text) {
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'en-US';
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        function flipCard() {
+            showingEnglish = !showingEnglish;
+            showCard();
+        }
+
         function nextCard() {
             currentIndex = (currentIndex + 1) % cards.length;
-            card.textContent = cards[currentIndex];
+            showingEnglish = true;
+            showCard();
         }
 
         function markCard(level) {
             stats[level]++;
+            if (level === "hard") {
+                const currentWord = cards[currentIndex];
+                const exists = hardWords.some(w => w.en === currentWord.en);
+                if (!exists) {
+                    hardWords.push(currentWord);
+                }
+                localStorage.setItem('hardWords', JSON.stringify(hardWords));
+            }
             updateStats();
             nextCard();
         }
@@ -86,13 +132,22 @@
             easyCount.textContent = stats.easy;
             goodCount.textContent = stats.good;
             hardCount.textContent = stats.hard;
-            // localStorage'a kaydet
             localStorage.setItem('stats', JSON.stringify(stats));
         }
 
-        // Sayfa yüklendiğinde ilk kartı göster ve istatistikleri güncelle
+        function repeatHardWords() {
+            if (hardWords.length === 0) {
+                alert("Henüz zor olarak işaretlenmiş kelime yok.");
+                return;
+            }
+            cards = shuffle([...hardWords]);
+            currentIndex = 0;
+            showingEnglish = true;
+            showCard();
+        }
+
         window.onload = () => {
-            card.textContent = cards[currentIndex];
+            showCard();
             updateStats();
         };
     </script>
