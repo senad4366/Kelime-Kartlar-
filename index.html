@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Kelime Kartları</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 30px;
+            background-color: #f0f8ff;
+        }
+        #card {
+            font-size: 24px;
+            margin: 20px auto;
+            padding: 40px;
+            border: 2px solid #ccc;
+            border-radius: 12px;
+            width: 80%;
+            max-width: 400px;
+            background-color: #fff;
+        }
+        button {
+            margin: 10px;
+            padding: 12px 24px;
+            font-size: 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        .easy { background-color: #90ee90; }
+        .good { background-color: #ffeb3b; }
+        .hard { background-color: #f08080; }
+        #stats {
+            margin-top: 20px;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Kelime Kartları</h1>
+    <div id="card">Hazır mısın?</div>
+    <button onclick="nextCard()">Sonraki</button>
+    <br><br>
+    <button class="easy" onclick="markCard('easy')">Kolay</button>
+    <button class="good" onclick="markCard('good')">Orta</button>
+    <button class="hard" onclick="markCard('hard')">Zor</button>
+
+    <div id="stats">
+        <p>Kolay: <span id="easyCount">0</span></p>
+        <p>Orta: <span id="goodCount">0</span></p>
+        <p>Zor: <span id="hardCount">0</span></p>
+    </div>
+
+    <script>
+        const cards = [
+            "elma – apple",
+            "kitap – book",
+            "masa – table",
+            "su – water",
+            "araba – car"
+        ];
+
+        let currentIndex = 0;
+
+        // localStorage'dan istatistikleri al
+        let stats = JSON.parse(localStorage.getItem('stats')) || { easy: 0, good: 0, hard: 0 };
+
+        const card = document.getElementById("card");
+        const easyCount = document.getElementById("easyCount");
+        const goodCount = document.getElementById("goodCount");
+        const hardCount = document.getElementById("hardCount");
+
+        function nextCard() {
+            currentIndex = (currentIndex + 1) % cards.length;
+            card.textContent = cards[currentIndex];
+        }
+
+        function markCard(level) {
+            stats[level]++;
+            updateStats();
+            nextCard();
+        }
+
+        function updateStats() {
+            easyCount.textContent = stats.easy;
+            goodCount.textContent = stats.good;
+            hardCount.textContent = stats.hard;
+            // localStorage'a kaydet
+            localStorage.setItem('stats', JSON.stringify(stats));
+        }
+
+        // Sayfa yüklendiğinde ilk kartı göster ve istatistikleri güncelle
+        window.onload = () => {
+            card.textContent = cards[currentIndex];
+            updateStats();
+        };
+    </script>
+</body>
+</html>
