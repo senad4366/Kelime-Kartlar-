@@ -1,14 +1,68 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Kelime Kartları ve Quiz</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      text-align: center;
       padding: 20px;
       background-color: #f0f8ff;
+      margin: 0;
+      position: relative;
+      min-height: 100vh;
+    }
+    #header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+    #scoreboard {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      background: white;
+      border: 2px solid #888;
+      border-radius: 8px;
+      padding: 10px 15px;
+      max-width: 200px;
+      font-size: 16px;
+      box-shadow: 2px 2px 10px rgba(0,0,0,0.1);
+      text-align: left;
+      z-index: 1000;
+    }
+    #scoreboard h3 {
+      margin: 0 0 10px 0;
+      font-size: 18px;
+      border-bottom: 1px solid #ccc;
+      padding-bottom: 5px;
+    }
+    #usernameForm {
+      font-size: 16px;
+    }
+    #usernameInput {
+      padding: 6px 10px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      width: 160px;
+    }
+    #saveUsernameBtn {
+      padding: 6px 12px;
+      font-size: 16px;
+      background-color: #4caf50;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-left: 8px;
+    }
+
+    #cardSection, #quiz {
+      margin: 20px auto;
+      width: 90%;
+      max-width: 500px;
     }
     #card {
       font-size: 24px;
@@ -16,8 +70,6 @@
       padding: 40px;
       border: 2px solid #ccc;
       border-radius: 12px;
-      width: 80%;
-      max-width: 400px;
       background-color: #fff;
       min-height: 50px;
     }
@@ -39,9 +91,8 @@
     }
     #quiz {
       display: none;
-      margin-top: 40px;
-      padding: 20px;
       border-top: 2px solid #888;
+      padding-top: 30px;
     }
     .option {
       display: block;
@@ -65,25 +116,40 @@
   </style>
 </head>
 <body>
-  <h1>Kelime Kartları</h1>
-  <div id="card">Hazır mısın?</div>
-  <button onclick="flipCard()">Kartı Çevir</button>
-  <button onclick="nextCard()">Sonraki</button>
-  <br><br>
-  <button class="easy" onclick="markCard('easy')">Kolay</button>
-  <button class="good" onclick="markCard('good')">Orta</button>
-  <button class="hard" onclick="markCard('hard')">Zor</button>
-  <br><br>
-  <button class="repeat" onclick="repeatHardWords()">Zorları Tekrarla</button>
-
-  <div id="stats">
-    <p>Kolay: <span id="easyCount">0</span></p>
-    <p>Orta: <span id="goodCount">0</span></p>
-    <p>Zor: <span id="hardCount">0</span></p>
+  <div id="header">
+    <form id="usernameForm" onsubmit="return saveUsername(event)">
+      <label for="usernameInput">👤 Kullanıcı Adı: </label>
+      <input type="text" id="usernameInput" placeholder="Adınızı girin" />
+      <button type="submit" id="saveUsernameBtn">Kaydet</button>
+    </form>
+    <div id="welcomeMsg" style="font-size:18px; font-weight:bold; color:#333;"></div>
   </div>
 
-  <br><hr><br>
-  <button id="startQuizBtn" onclick="showQuiz()">📋 Quiz'e Başla</button>
+  <div id="scoreboard">
+    <h3>🏆 Skor Tablosu</h3>
+    <div id="scoresList">Henüz skor yok.</div>
+  </div>
+
+  <h1>Kelime Kartları</h1>
+
+  <div id="cardSection">
+    <div id="card">Hazır mısın?</div>
+    <button onclick="flipCard()">Kartı Çevir</button>
+    <button onclick="nextCard()">Sonraki</button><br />
+    <button class="easy" onclick="markCard('easy')">Kolay</button>
+    <button class="good" onclick="markCard('good')">Orta</button>
+    <button class="hard" onclick="markCard('hard')">Zor</button><br />
+    <button class="repeat" onclick="repeatHardWords()">Zorları Tekrarla</button>
+
+    <div id="stats">
+      <p>Kolay: <span id="easyCount">0</span></p>
+      <p>Orta: <span id="goodCount">0</span></p>
+      <p>Zor: <span id="hardCount">0</span></p>
+    </div>
+
+    <br /><hr /><br />
+    <button id="startQuizBtn" onclick="showQuiz()">📋 Quiz'e Başla</button>
+  </div>
 
   <div id="quiz">
     <h2>Quiz Başladı</h2>
@@ -108,22 +174,91 @@
       { en: "computer", tr: "bilgisayar" }, { en: "notebook", tr: "defter" }
     ];
 
+    // Kullanıcı ve skorlar
+    let currentUser = localStorage.getItem("currentUser") || "";
+    let scores = JSON.parse(localStorage.getItem("scores")) || {}; // {username: score}
+
+    // Kartlar
     let cards = shuffle([...allCards]);
-    let hardWords = JSON.parse(localStorage.getItem('hardWords')) || [];
+    let hardWords = JSON.parse(localStorage.getItem("hardWords")) || [];
     let currentIndex = 0;
     let showingEnglish = true;
 
-    let stats = JSON.parse(localStorage.getItem('stats')) || { easy: 0, good: 0, hard: 0 };
+    // İstatistik
+    let stats = JSON.parse(localStorage.getItem("stats")) || { easy: 0, good: 0, hard: 0 };
 
+    // DOM elemanları
     const card = document.getElementById("card");
     const easyCount = document.getElementById("easyCount");
     const goodCount = document.getElementById("goodCount");
     const hardCount = document.getElementById("hardCount");
 
+    const quizQuestionDiv = document.getElementById("quizQuestion");
+    const quizOptionsDiv = document.getElementById("quizOptions");
+    const quizResultDiv = document.getElementById("quizResult");
+    const lastScoreSpan = document.getElementById("lastScore");
+
+    const scoresListDiv = document.getElementById("scoresList");
+    const usernameInput = document.getElementById("usernameInput");
+    const welcomeMsg = document.getElementById("welcomeMsg");
+
+    // Quiz değişkenleri
+    let quizIndex = 0;
+    let quizQuestions = [];
+    let quizScore = 0;
+    let selectedOption = null;
+    const quizCount = 10;
+
+    // Karışık dizi döndürme fonksiyonu
     function shuffle(array) {
       return array.sort(() => Math.random() - 0.5);
     }
 
+    // Kullanıcı adı kayıt işlemi
+    function saveUsername(event) {
+      event.preventDefault();
+      const name = usernameInput.value.trim();
+      if (!name) {
+        alert("Lütfen geçerli bir kullanıcı adı girin.");
+        return false;
+      }
+      currentUser = name;
+      localStorage.setItem("currentUser", currentUser);
+      usernameInput.value = "";
+      updateWelcomeMessage();
+      renderScoreboard();
+      alert(`${currentUser} olarak giriş yapıldı.`);
+      return false;
+    }
+
+    function updateWelcomeMessage() {
+      if(currentUser) {
+        welcomeMsg.textContent = `Hoş geldin, ${currentUser}!`;
+        document.getElementById("usernameForm").style.display = "none";
+      } else {
+        welcomeMsg.textContent = "";
+        document.getElementById("usernameForm").style.display = "inline-block";
+      }
+    }
+
+    // Skor tablosunu DOM'a yazdır
+    function renderScoreboard() {
+      const entries = Object.entries(scores);
+      if(entries.length === 0) {
+        scoresListDiv.textContent = "Henüz skor yok.";
+        return;
+      }
+      // Puanlara göre büyükten küçüğe sırala
+      entries.sort((a,b) => b[1] - a[1]);
+      scoresListDiv.innerHTML = "";
+      for(const [user, score] of entries) {
+        const div = document.createElement("div");
+        div.textContent = `${user}: ${score}`;
+        scoresListDiv.appendChild(div);
+      }
+    }
+
+    // Kart fonksiyonları
     function showCard() {
       const currentCard = cards[currentIndex];
       card.textContent = showingEnglish ? currentCard.en : currentCard.tr;
@@ -180,21 +315,14 @@
       showCard();
     }
 
-    // ==== QUIZ ====
-    let quizIndex = 0;
-    let quizQuestions = [];
-    let quizScore = 0;
-    let selectedOption = null;
-    const quizCount = 10; // kaç soru olsun
-
-    const quizQuestionDiv = document.getElementById("quizQuestion");
-    const quizOptionsDiv = document.getElementById("quizOptions");
-    const quizResultDiv = document.getElementById("quizResult");
-    const lastScoreSpan = document.getElementById("lastScore");
-
+    // Quiz fonksiyonları
     function showQuiz() {
+      if(!currentUser) {
+        alert("Lütfen önce kullanıcı adınızı kaydedin.");
+        return;
+      }
+      document.getElementById("cardSection").style.display = "none";
       document.getElementById("quiz").style.display = "block";
-      document.getElementById("startQuizBtn").style.display = "none";
       startQuiz();
     }
 
@@ -204,6 +332,8 @@
       quizScore = 0;
       selectedOption = null;
       showQuizQuestion();
+      quizResultDiv.textContent = "";
+      lastScoreSpan.textContent = "0";
     }
 
     function showQuizQuestion() {
@@ -227,8 +357,6 @@
         };
         quizOptionsDiv.appendChild(btn);
       });
-
-      quizResultDiv.textContent = "";
     }
 
     function submitAnswer() {
@@ -259,14 +387,19 @@
       const score = Math.round((quizScore / quizCount) * 100);
       quizResultDiv.textContent = `Quiz tamamlandı! Puan: ${score}`;
       lastScoreSpan.textContent = score;
-      localStorage.setItem("lastScore", score);
+
+      // Skorları güncelle ve localStorage'a kaydet
+      scores[currentUser] = score;
+      localStorage.setItem("scores", JSON.stringify(scores));
+      renderScoreboard();
     }
 
+    // Sayfa yüklendiğinde
     window.onload = () => {
+      updateWelcomeMessage();
+      renderScoreboard();
       showCard();
       updateStats();
-      const savedScore = localStorage.getItem("lastScore");
-      if (savedScore) lastScoreSpan.textContent = savedScore;
     };
   </script>
 </body>
